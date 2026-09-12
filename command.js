@@ -49,14 +49,14 @@ async function frontEndFolder(project_name = '') {
     const result = await runCommand(file1);
 
     console.log(`Created an FrontEnd folder:\n${result}`);
-    await frontEndDeleteFiles(project_name);
+    await frontEndBoilerPlate(project_name);
   }
   catch (err) {
     console.log("Handled error in main function.");
   }
 }
 
-async function frontEndDeleteFiles(project_name = '') {
+async function frontEndBoilerPlate(project_name = '') {
   try {
     const folderPath = project_name ? path.join(project_name, 'FrontEnd') : 'FrontEnd';
 
@@ -113,16 +113,74 @@ export default defineConfig({
 
 async function backEndFolder(project_name = '') {
   try {
-    console.log("Creating an backEndFolder ");
-    // const dire = await runCommand('cd')
-    const folderPath = project_name ? `${project_name}/BackEnd` : 'BackEnd';
-    const file = `mkdir "${folderPath}"`;
-    const result = await runCommand(file);
-    console.log(`Created an BackEnd folder ${result}`);
+    console.log("Creating an BackEnd folder ");
+    const folderPath = project_name ? path.join(project_name, 'BackEnd') : 'BackEnd';
+    await fs.mkdir(folderPath, { recursive: true });
+    console.log(`Created an BackEnd folder`);
+
+    await backEndBoilerPlate(project_name);
   }
   catch (err) {
-    console.log("Handled error in main function.");
+    console.log("Handled error in backEndFolder function:", err.message);
   }
 }
 
-export { frontEndFolder, frontEndDeleteFiles, backEndFolder, projectFolder }
+async function backEndBoilerPlate(project_name = '') {
+  try {
+    const folderPath = project_name ? path.join(project_name, 'BackEnd') : 'BackEnd';
+    const subFolders = ['config', 'controllers', 'middleware', 'models', 'routes'];
+
+    // 1. Create subfolders
+    for (const folder of subFolders) {
+      await fs.mkdir(path.join(folderPath, folder), { recursive: true });
+    }
+    console.log(`Created BackEnd boilerplate folders: ${subFolders.join(', ')}`);
+
+    // 2. npm init -y
+    console.log("Initializing BackEnd package.json...");
+    await runCommand('npm init -y', { cwd: folderPath });
+
+    // 3. Update package.json: set type: "module" and add dev/start scripts
+    const packageJsonPath = path.join(folderPath, 'package.json');
+    const packageData = await fs.readFile(packageJsonPath, 'utf-8');
+    const packageJson = JSON.parse(packageData);
+    packageJson.type = 'module';
+    packageJson.main = 'index.js';
+    packageJson.scripts = {
+      ...packageJson.scripts,
+      dev: 'nodemon index.js',
+      start: 'node index.js'
+    };
+    await fs.writeFile(packageJsonPath, JSON.stringify(packageJson, null, 2));
+
+    // 4. Install express and nodemon
+    console.log("Installing express and nodemon...");
+    const installResult = await runCommand('npm install express nodemon', { cwd: folderPath });
+    console.log(`Installed packages in BackEnd:\n${installResult}`);
+
+    // 5. Create starter index.js
+    const starterServer = `import express from 'express';
+
+const app = express();
+const PORT = process.env.PORT || 5000;
+
+app.use(express.json());
+
+app.get('/', (req, res) => {
+  res.send('Server is running...');
+});
+
+app.listen(PORT, () => {
+  console.log(\`Server is running on http://localhost:\${PORT}\`);
+});
+`;
+    await fs.writeFile(path.join(folderPath, 'index.js'), starterServer);
+
+    console.log(`BackEnd boilerplate setup complete.`);
+  }
+  catch (err) {
+    console.log("Handled error in backEndBoilerPlate function:", err.message);
+  }
+}
+
+export { frontEndFolder, frontEndBoilerPlate, backEndFolder, backEndBoilerPlate, projectFolder }
