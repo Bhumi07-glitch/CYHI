@@ -1,3 +1,4 @@
+import fs from 'node:fs/promises';
 import path from 'node:path';
 import { promisify } from 'node:util';
 import { exec as execCallback } from 'node:child_process';
@@ -9,10 +10,10 @@ const exec = promisify(execCallback);
  * @returns {Promise<string>} - The command output (stdout).
  */
 
-async function runCommand(command) {
+async function runCommand(command, options = {}) {
   try {
     // Wait for the command to finish executing
-    const { stdout, stderr } = await exec(command);
+    const { stdout, stderr } = await exec(command, options);
 
     // If the command writes to stderr (even if it didn't fail completely)
     if (stderr) {
@@ -43,22 +44,78 @@ async function projectFolder(project_name) {
 async function frontEndFolder(project_name = '') {
   try {
     console.log("Creating an FrontEnd folder ");
-    // const dire = await runCommand('cd')
-    const folderPath = project_name ? path.join(project_name, 'FrontEnd') : 'FrontEnd';
-    const file = `mkdir "${folderPath}"`;
-    const result = await runCommand(file);
-    console.log(`Created an FrontEnd folder ${result}`);
+    const folderPath = project_name ? `${project_name}/FrontEnd` : 'FrontEnd';
+    const file1 = `npm create vite@latest "${folderPath}" -- --template react`;
+    const result = await runCommand(file1);
+
+    console.log(`Created an FrontEnd folder:\n${result}`);
+    await frontEndDeleteFiles(project_name);
   }
   catch (err) {
     console.log("Handled error in main function.");
   }
 }
 
+async function frontEndDeleteFiles(project_name = '') {
+  try {
+    const folderPath = project_name ? path.join(project_name, 'FrontEnd') : 'FrontEnd';
+
+    // 1. Delete App.css, README.md, and assets directory
+    await fs.rm(path.join(folderPath, 'src', 'App.css'), { force: true });
+    await fs.rm(path.join(folderPath, 'README.md'), { force: true });
+    await fs.rm(path.join(folderPath, 'src', 'assets'), { recursive: true, force: true });
+
+    // 2. Setup Tailwind in index.css
+    await fs.writeFile(path.join(folderPath, 'src', 'index.css'), '@import "tailwindcss";\n');
+
+    // 3. Reset App.jsx to a clean component
+    const cleanAppContent = `import React from 'react'
+
+const App = () => {
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-gray-900 text-white">
+      <h1 className="text-3xl font-bold">Vite + React + Tailwind CSS</h1>
+    </div>
+  )
+}
+
+export default App
+`;
+    await fs.writeFile(path.join(folderPath, 'src', 'App.jsx'), cleanAppContent);
+
+    // 4. Update vite.config.js for Tailwind CSS plugin
+    const viteConfigContent = `import { defineConfig } from 'vite'
+import react from '@vitejs/plugin-react'
+import tailwindcss from '@tailwindcss/vite'
+
+// https://vite.dev/config/
+export default defineConfig({
+  plugins: [
+    react(),
+    tailwindcss(),
+  ],
+})
+`;
+    await fs.writeFile(path.join(folderPath, 'vite.config.js'), viteConfigContent);
+
+    // 5. Install Tailwind CSS and @tailwindcss/vite packages
+    console.log("Installing Tailwind CSS packages in FrontEnd...");
+    const installOutput = await runCommand('npm install tailwindcss @tailwindcss/vite', { cwd: folderPath });
+    console.log(`Tailwind CSS installed:\n${installOutput}`);
+
+    console.log(`Cleaned FrontEnd files & configured Tailwind CSS successfully.`);
+  }
+  catch (err) {
+    console.log("Handled error in frontEndDeleteFiles function:", err.message);
+  }
+}
+
+
 async function backEndFolder(project_name = '') {
   try {
     console.log("Creating an backEndFolder ");
     // const dire = await runCommand('cd')
-    const folderPath = project_name ? path.join(project_name, 'BackEnd') : 'BackEnd';
+    const folderPath = project_name ? `${project_name}/BackEnd` : 'BackEnd';
     const file = `mkdir "${folderPath}"`;
     const result = await runCommand(file);
     console.log(`Created an BackEnd folder ${result}`);
@@ -68,4 +125,4 @@ async function backEndFolder(project_name = '') {
   }
 }
 
-export { frontEndFolder, backEndFolder, projectFolder }
+export { frontEndFolder, frontEndDeleteFiles, backEndFolder, projectFolder }
