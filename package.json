@@ -2,8 +2,11 @@
   "name": "cyhi",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
-  "type":"module",
+  "main": "cli.js",
+  "type": "module",
+  "bin": {
+    "hackme44": "./cli.js"
+  },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -11,6 +14,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@clack/prompts": "^1.8.0",
     "commander": "^15.0.0"
   }
 }

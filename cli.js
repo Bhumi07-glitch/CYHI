@@ -1,11 +1,13 @@
 #!/usr/bin/env node
 import { Command } from 'commander';
 import { frontEndFolder, backEndFolder, projectFolder } from './command.js';
+import { projectOptions } from './options.js';
+
 const program = new Command();
 
 // 1. Basic configuration
 program
-  .name('my-cli')
+  .name('hackme44')
   .description('A simple CLI built with Commander.js')
   .version('1.0.0');
 
@@ -31,14 +33,17 @@ program
   .option('--fb, --frontandback', 'Creates FrontEnd and BackEnd folders')
   .action(async (name, options) => {
     await projectFolder(name);
-    if (options.frontandback || (options.front && options.back)) {
+
+    const projectType = await projectOptions();
+
+    if (projectType === 'frontandback') {
       await frontEndFolder(name);
       await backEndFolder(name);
     }
-    else if (options.front) {
+    else if (projectType === 'front') {
       await frontEndFolder(name);
     }
-    else if (options.back) {
+    else if (projectType === 'back') {
       await backEndFolder(name);
     }
     else {
