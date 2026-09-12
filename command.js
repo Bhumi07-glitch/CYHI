@@ -183,4 +183,41 @@ app.listen(PORT, () => {
   }
 }
 
-export { frontEndFolder, frontEndBoilerPlate, backEndFolder, backEndBoilerPlate, projectFolder }
+async function InitalizeGitRepo(project_name = '', repo_url = '') {
+  try {
+    const targetDir = project_name ? path.resolve(project_name) : process.cwd();
+    console.log(`Initializing Git repository in ${targetDir}...`);
+
+    // 1. git init
+    console.log("> git init");
+    await runCommand('git init', { cwd: targetDir });
+
+    // 2. git add .
+    console.log("> git add .");
+    await runCommand('git add .', { cwd: targetDir });
+
+    // 3. git commit -m "Initial commit"
+    console.log('> git commit -m "Initial commit"');
+    await runCommand('git commit -m "Initial commit"', { cwd: targetDir });
+
+    // 4. git branch -M main
+    console.log("> git branch -M main");
+    await runCommand('git branch -M main', { cwd: targetDir });
+
+    // 5. git remote add origin <url>
+    const remoteUrl = repo_url || (project_name ? `https://github.com/USERNAME/${project_name}.git` : 'https://github.com/USERNAME/myProject.git');
+    console.log(`> git remote add origin ${remoteUrl}`);
+    await runCommand(`git remote add origin ${remoteUrl}`, { cwd: targetDir });
+
+    // 6. git push -u origin main
+    console.log("> git push -u origin main");
+    await runCommand('git push -u origin main', { cwd: targetDir });
+
+    console.log("Git repository initialized and pushed successfully!");
+  }
+  catch (err) {
+    console.log("Handled error in InitalizeGitRepo function:", err.message);
+  }
+}
+
+export { frontEndFolder, frontEndBoilerPlate, backEndFolder, backEndBoilerPlate, InitalizeGitRepo, projectFolder }

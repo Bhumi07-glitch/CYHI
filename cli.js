@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { Command } from 'commander';
-import { frontEndFolder, backEndFolder, projectFolder } from './command.js';
+import { frontEndFolder, backEndFolder, projectFolder, InitalizeGitRepo } from './command.js';
 import { projectOptions } from './options.js';
 
 const program = new Command();
@@ -24,6 +24,7 @@ program
     }
     console.log(message);
   });
+
 program
   .command('project')
   .description('Creates a project folder')
@@ -49,6 +50,15 @@ program
     else {
       console.log('No option selected');
     }
+  });
+
+program
+  .command('init-repo')
+  .description('Initialize a git repository and connect to a remote repository')
+  .argument('<name>', 'Project folder name')
+  .argument('<repo_url>', 'Remote Git repository URL')
+  .action(async (name, repo_url) => {
+    await InitalizeGitRepo(name, repo_url);
   });
 
 
